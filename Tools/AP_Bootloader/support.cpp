@@ -96,11 +96,13 @@ void flash_init(void)
     /*
       reduce num_pages to account for FLASH_RESERVE_END_KB
      */
+    #if FLASH_RESERVE_END_KB > 0
     reserved = 0;
     while (reserved < FLASH_RESERVE_END_KB * 1024U) {
         reserved += stm32_flash_getpagesize(num_pages-1);
         num_pages--;
     }
+    #endif
 }
 
 void flash_set_keep_unlocked(bool set)
