@@ -123,7 +123,16 @@ void AP_MotorsMatrix::set_update_rate(uint16_t speed_hz)
             mask |= 1U << i;
         }
     }
+    
+    if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+        // set update rate for the 2 motors (but not the servo on channel 7, 1, 2)
+        mask = 
+            1U << AP_MOTORS_MOT_3 |
+            1U << AP_MOTORS_MOT_4;
+    }
+    
     rc_set_freq(mask, _speed_hz);
+
 }
 
 // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
@@ -152,6 +161,9 @@ void AP_MotorsMatrix::output_to_motors()
                     _actuator[i] = 0.0f;
                 }
             }
+            if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD) {
+                rc_write_angle(AP_MOTORS_CH_TRI_YAW, 0);
+            }
             break;
         }
         case SpoolState::GROUND_IDLE:
@@ -160,6 +172,9 @@ void AP_MotorsMatrix::output_to_motors()
                 if (motor_enabled[i]) {
                     set_actuator_with_slew(_actuator[i], actuator_spin_up_to_ground_idle());
                 }
+            }
+            if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD) {
+                rc_write_angle(AP_MOTORS_CH_TRI_YAW, 0);
             }
             break;
         case SpoolState::SPOOLING_UP:
@@ -171,12 +186,21 @@ void AP_MotorsMatrix::output_to_motors()
                     set_actuator_with_slew(_actuator[i], thrust_to_actuator(_thrust_rpyt_out[i]));
                 }
             }
+            if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD) {
+                rc_write_angle(AP_MOTORS_CH_TRI_YAW, degrees(_pivot_angle)*100);
+            }
             break;
     }
 
     // convert output to PWM and send to each motor
     for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i]) {
+            //TODO JA:  Manage servo reverse
+            if (i == AP_MOTORS_MOT_1 || i == AP_MOTORS_MOT_2)
+                _actuator[i] = _actuator[i] * 0.7;
+            if (i == AP_MOTORS_MOT_2)
+                _actuator[i] = 1 - _actuator[i];
+            
             rc_write(i, output_to_pwm(_actuator[i]));
         }
     }
@@ -208,6 +232,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     float   roll_thrust;                // roll thrust input value, +/- 1.0
     float   pitch_thrust;               // pitch thrust input value, +/- 1.0
     float   yaw_thrust;                 // yaw thrust input value, +/- 1.0
+    //float   yaw_thrust_2;                 // yaw thrust input value, +/- 1.0
     float   throttle_thrust;            // throttle thrust input value, 0.0 - 1.0
     float   throttle_avg_max;           // throttle thrust average maximum value, 0.0 - 1.0
     float   throttle_thrust_max;        // throttle thrust maximum value, 0.0 - 1.0
@@ -216,13 +241,29 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     float   yaw_allowed = 1.0f;         // amount of yaw we can fit in
     float   thr_adj;                    // the difference between the pilot's desired throttle and throttle_thrust_best_rpy
 
+
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_MOTORS_CH_TRI_YAW), _yaw_servo_angle_max_deg*100);
+
+    // sanity check YAW_SV_ANGLE parameter value to avoid divide by zero
+    _yaw_servo_angle_max_deg.set(constrain_float(_yaw_servo_angle_max_deg, 5, 80));
+
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain(); // compensation for battery voltage and altitude
     roll_thrust = (_roll_in + _roll_in_ff) * compensation_gain;
     pitch_thrust = (_pitch_in + _pitch_in_ff) * compensation_gain;
     yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain;
+    if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+        yaw_thrust  = (_yaw_in + _yaw_in_ff) * compensation_gain * sinf(radians(_yaw_servo_angle_max_deg)); // we scale this so a thrust request of 1.0f will ask for full servo deflection at full rear throttle
+        _pivot_angle = safe_asin(yaw_thrust);
+        if (fabsf(_pivot_angle) > radians(_yaw_servo_angle_max_deg)) {
+            limit.yaw = true;
+            _pivot_angle = constrain_float(_pivot_angle, -radians(_yaw_servo_angle_max_deg), radians(_yaw_servo_angle_max_deg));
+        }
+    }
+
     throttle_thrust = get_throttle() * compensation_gain;
     throttle_avg_max = _throttle_avg_max * compensation_gain;
+
 
     // If thrust boost is active then do not limit maximum thrust
     throttle_thrust_max = _thrust_boost_ratio + (1.0f - _thrust_boost_ratio) * _throttle_thrust_max * compensation_gain;
@@ -345,6 +386,20 @@ void AP_MotorsMatrix::output_armed_stabilizing()
             }
         }
     }
+
+    // scale pivot thrust to account for pivot angle
+    // we should not need to check for divide by zero as _pivot_angle is constrained to the 5deg ~ 80 deg range
+    if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+        if (AP_MOTORS_MAX_NUM_MOTORS >= 4){
+            float cc = cosf(_pivot_angle);
+            if (cc < 0.0f || cc > 0.0f){
+                _thrust_rpyt_out[3] = _thrust_rpyt_out[3] / cc;
+            }else {
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "cc==0, value of rpyt[3]=%f", _thrust_rpyt_out[3]);
+            }
+            _thrust_rpyt_out[3] = constrain_float(_thrust_rpyt_out[3], 0.0f, 1.0f);
+        }
+    }
     // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
     if (_thrust_boost) {
         // record highest roll + pitch + yaw command
@@ -462,12 +517,19 @@ void AP_MotorsMatrix::check_for_failed_motor(float throttle_thrust_best_plus_adj
 //  pwm value is an actual pwm value that will be output, normally in the range of 1000 ~ 2000
 void AP_MotorsMatrix::_output_test_seq(uint8_t motor_seq, int16_t pwm)
 {
+    bool run = false;
     // loop through all the possible orders spinning any motors that match that description
     for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i] && _test_order[i] == motor_seq) {
             // turn on this motor
             rc_write(i, pwm);
+            run = true;
         }
+    }
+    // TODO check if it's correct
+    if (motor_seq == 5 && run == false){
+        // back servo
+        rc_write(AP_MOTORS_CH_TRI_YAW, pwm);
     }
 }
 
@@ -597,9 +659,13 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
         add_motors(motors, ARRAY_SIZE(motors));
         break;
     }
-#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+//#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+    case MOTOR_FRAME_TYPE_NYT_PLUS_YTD:
     case MOTOR_FRAME_TYPE_NYT_PLUS: {
         _frame_type_string = "NYT_PLUS";
+        if (frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+            _frame_type_string = "F35B";
+        }
         static const AP_MotorsMatrix::MotorDef motors[] {
             {  90, 0,  2 },
             { -90, 0,  4 },
@@ -607,6 +673,12 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
             { 180, 0,  3 },
         };
         add_motors(motors, ARRAY_SIZE(motors));
+        if (frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+            add_motor_num(AP_MOTORS_CH_TRI_YAW);
+            uint16_t angle = _yaw_servo_angle_max_deg * 100;
+            SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_MOTORS_CH_TRI_YAW), angle);
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ServX_FCT(39) angle: %d", angle);
+        }
         break;
     }
     case MOTOR_FRAME_TYPE_NYT_X: {
@@ -620,7 +692,7 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
         add_motors(motors, ARRAY_SIZE(motors));
         break;
     }
-#endif //APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+//#endif //APM_BUILD_TYPE(APM_BUILD_ArduPlane)
     case MOTOR_FRAME_TYPE_BF_X: {
         // betaflight quad X order
         // see: https://fpvfrenzy.com/betaflight-motor-order/
@@ -1364,6 +1436,8 @@ void AP_MotorsMatrix::disable_yaw_torque(void)
         _yaw_factor[i] = 0;
     }
 }
+
+
 
 // singleton instance
 AP_MotorsMatrix *AP_MotorsMatrix::_singleton;
