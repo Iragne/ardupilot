@@ -191,13 +191,16 @@ void AP_MotorsMatrix::output_to_motors()
             }
             break;
     }
+    // TODO JA: later
+    // float means = (_actuator[AP_MOTORS_MOT_2] + _actuator[AP_MOTORS_MOT_1]) / 2.0;
+    // _actuator[AP_MOTORS_MOT_4] = fmaxf(means, _actuator[AP_MOTORS_MOT_4]);
 
     // convert output to PWM and send to each motor
     for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i]) {
             //TODO JA:  Manage servo reverse
             if (i == AP_MOTORS_MOT_1 || i == AP_MOTORS_MOT_2)
-                _actuator[i] = _actuator[i] * 0.7;
+                _actuator[i] = _actuator[i] * 0.5;
             if (i == AP_MOTORS_MOT_2)
                 _actuator[i] = 1 - _actuator[i];
             
@@ -666,13 +669,19 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
         if (frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
             _frame_type_string = "F35B";
         }
-        static const AP_MotorsMatrix::MotorDef motors[] {
-            {  90, 0,  2 },
-            { -90, 0,  4 },
-            {   0, 0,  1 },
-            { 180, 0,  3 },
-        };
-        add_motors(motors, ARRAY_SIZE(motors));
+        // static const AP_MotorsMatrix::MotorDef motors[] {
+        //     {  90, 0,  2 },
+        //     { -90, 0,  4 },
+        //     {   0, 0,  1 },
+        //     { 180, 0,  3 },
+        // };
+        
+        // add_motors(motors, ARRAY_SIZE(motors));
+        add_motor_raw(AP_MOTORS_MOT_4, 0, 		-0.732, 0, 1);
+        add_motor_raw(AP_MOTORS_MOT_1, -0.902, 	-0.134, 0, 2);
+        add_motor_raw(AP_MOTORS_MOT_2, 0.902, 	-0.134, 0, 3);
+        add_motor_raw(AP_MOTORS_MOT_3, 0, 		1, 		0, 4);
+
         if (frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
             add_motor_num(AP_MOTORS_CH_TRI_YAW);
             uint16_t angle = _yaw_servo_angle_max_deg * 100;
