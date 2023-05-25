@@ -257,7 +257,11 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain;
     if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
         // TODO JA Check compensation throttle 
-        yaw_thrust  = (_yaw_in + _yaw_in_ff) * compensation_gain * sinf(radians(_yaw_servo_angle_max_deg)); // we scale this so a thrust request of 1.0f will ask for full servo deflection at full rear throttle
+        float compensation_gain_yaw = 1;
+        if (_yaw_linear_compensation.get() >= 1)
+            compensation_gain_yaw = compensation_gain;
+
+        yaw_thrust  = (_yaw_in + _yaw_in_ff) * compensation_gain_yaw * sinf(radians(_yaw_servo_angle_max_deg)); // we scale this so a thrust request of 1.0f will ask for full servo deflection at full rear throttle
         _pivot_angle = safe_asin(yaw_thrust);
         if (fabsf(_pivot_angle) > radians(_yaw_servo_angle_max_deg)) {
             limit.yaw = true;
@@ -682,7 +686,16 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
         // };
         
         // add_motors(motors, ARRAY_SIZE(motors));
-        add_motor_raw(AP_MOTORS_MOT_4, 0, 		-0.732, 0, 1);
+        /*
+1 2 300
+1 3 300
+1 4 500
+3 2 500
+1 4 v
+2 3 h
+        */
+        // add_motor_raw(AP_MOTORS_MOT_4, 0, 		-0.732, 0, 1);
+        add_motor_raw(AP_MOTORS_MOT_4, 0, 		1, 0, 1);
         add_motor_raw(AP_MOTORS_MOT_1, -0.902, 	-0.134, 0, 2);
         add_motor_raw(AP_MOTORS_MOT_2, 0.902, 	-0.134, 0, 3);
         add_motor_raw(AP_MOTORS_MOT_3, 0, 		1, 		0, 4);

@@ -155,6 +155,12 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Standard
     AP_GROUPINFO_FRAME("YAW_SV_ANGLE", 35, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_TRICOPTER),
     AP_GROUPINFO_FRAME("YAW_SV_ANGLE", 35, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_PLANE),
+    AP_GROUPINFO_FRAME("YAW_SV_ANGLE", 35, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_COPTER),
+
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 30, AP_PARAM_FRAME_PLANE),
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 30, AP_PARAM_FRAME_COPTER),
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 30, AP_PARAM_FRAME_TRICOPTER),
+    
 
     // @Param: SPOOL_TIME
     // @DisplayName: Spool up time
