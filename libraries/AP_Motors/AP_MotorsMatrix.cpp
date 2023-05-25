@@ -248,7 +248,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_MOTORS_CH_TRI_YAW), _yaw_servo_angle_max_deg*100);
 
     // sanity check YAW_SV_ANGLE parameter value to avoid divide by zero
-    _yaw_servo_angle_max_deg.set(constrain_float(_yaw_servo_angle_max_deg, 5, 80));
+    _yaw_servo_angle_max_deg.set(constrain_float(_yaw_servo_angle_max_deg, AP_MOTORS_TRI_SERVO_RANGE_DEG_MIN, AP_MOTORS_TRI_SERVO_RANGE_DEG_MAX));
 
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain(); // compensation for battery voltage and altitude
@@ -256,6 +256,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     pitch_thrust = (_pitch_in + _pitch_in_ff) * compensation_gain;
     yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain;
     if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+        // TODO JA Check compensation throttle 
         yaw_thrust  = (_yaw_in + _yaw_in_ff) * compensation_gain * sinf(radians(_yaw_servo_angle_max_deg)); // we scale this so a thrust request of 1.0f will ask for full servo deflection at full rear throttle
         _pivot_angle = safe_asin(yaw_thrust);
         if (fabsf(_pivot_angle) > radians(_yaw_servo_angle_max_deg)) {
@@ -364,8 +365,8 @@ void AP_MotorsMatrix::output_armed_stabilizing()
             }
         }
     }
-
-    if (fabsf(yaw_thrust) > yaw_allowed) {
+    // Not to do it in case of NYT Frame with YTD activated (serv 39)
+    if (fabsf(yaw_thrust) > yaw_allowed && _active_frame_type != MOTOR_FRAME_TYPE_NYT_PLUS_YTD) {
         // not all commanded yaw can be used
         yaw_thrust = constrain_float(yaw_thrust, -yaw_allowed, yaw_allowed);
         limit.yaw = true;
@@ -390,19 +391,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
         }
     }
 
-    // scale pivot thrust to account for pivot angle
-    // we should not need to check for divide by zero as _pivot_angle is constrained to the 5deg ~ 80 deg range
-    if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
-        if (AP_MOTORS_MAX_NUM_MOTORS >= 4){
-            float cc = cosf(_pivot_angle);
-            if (cc < 0.0f || cc > 0.0f){
-                _thrust_rpyt_out[3] = _thrust_rpyt_out[3] / cc;
-            }else {
-                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "cc==0, value of rpyt[3]=%f", _thrust_rpyt_out[3]);
-            }
-            _thrust_rpyt_out[3] = constrain_float(_thrust_rpyt_out[3], 0.0f, 1.0f);
-        }
-    }
+    
     // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
     if (_thrust_boost) {
         // record highest roll + pitch + yaw command
@@ -428,7 +417,9 @@ void AP_MotorsMatrix::output_armed_stabilizing()
         // Full range is being used by roll, pitch, and yaw.
         limit.roll = true;
         limit.pitch = true;
-        limit.yaw = true;
+        if (_active_frame_type != MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+            limit.yaw = true;
+        }
         if (thr_adj > 0.0f) {
             limit.throttle_upper = true;
         }
@@ -456,6 +447,20 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // determine throttle thrust for harmonic notch
     // compensation_gain can never be zero
     _throttle_out = throttle_thrust_best_plus_adj / compensation_gain;
+
+    // scale pivot thrust to account for pivot angle
+    // we should not need to check for divide by zero as fabs(_pivot_angle) is constrained to the 5deg ~ 80 deg range
+    if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
+        if (AP_MOTORS_MAX_NUM_MOTORS >= 4){
+            float cc = cosf(_pivot_angle);
+            if (cc < 0.0f || cc > 0.0f){
+                _thrust_rpyt_out[AP_MOTORS_MOT_4] = _thrust_rpyt_out[AP_MOTORS_MOT_4] / cc;
+            }else {
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "cc==0, value of rpyt[3]=%f", _thrust_rpyt_out[AP_MOTORS_MOT_4]);
+            }
+            _thrust_rpyt_out[AP_MOTORS_MOT_4] = constrain_float(_thrust_rpyt_out[AP_MOTORS_MOT_4], 0.0f, 1.0f);
+        }
+    }
 
     // check for failed motor
     check_for_failed_motor(throttle_thrust_best_plus_adj);
