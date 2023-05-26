@@ -695,10 +695,17 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
 2 3 h
         */
         // add_motor_raw(AP_MOTORS_MOT_4, 0, 		-0.732, 0, 1);
-        add_motor_raw(AP_MOTORS_MOT_4, 0, 		1, 0, 1);
+        /*
+        add_motor_raw(AP_MOTORS_MOT_4, 0, 		-1, 0, 1);
         add_motor_raw(AP_MOTORS_MOT_1, -0.902, 	-0.134, 0, 2);
         add_motor_raw(AP_MOTORS_MOT_2, 0.902, 	-0.134, 0, 3);
         add_motor_raw(AP_MOTORS_MOT_3, 0, 		1, 		0, 4);
+        */
+
+        add_motor_raw(AP_MOTORS_MOT_3, 0, 1, 0, 3);
+        add_motor_raw(AP_MOTORS_MOT_2, 1, -0.524, 0, 2);
+        add_motor_raw(AP_MOTORS_MOT_1, -1, -0.524, 0, 1);
+        add_motor_raw(AP_MOTORS_MOT_4, 0, -1, 0, 4);
 
         if (frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
             add_motor_num(AP_MOTORS_CH_TRI_YAW);
