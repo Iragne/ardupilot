@@ -16,6 +16,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_MotorsMatrix.h"
 #include <AP_Vehicle/AP_Vehicle.h>
+#include "AP_Logger/AP_Logger.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -187,7 +188,10 @@ void AP_MotorsMatrix::output_to_motors()
                 }
             }
             if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD) {
-                rc_write_angle(AP_MOTORS_CH_TRI_YAW, degrees(_pivot_angle)*100);
+                const float pv = degrees(_pivot_angle);
+                rc_write_angle(AP_MOTORS_CH_TRI_YAW, pv *100);
+                //AP::logger().Write_MessageF("pivo %f ", pv);
+                AP::logger().Write("CTRA", "TimeUS,Pivo", "Qf",AP_HAL::micros64(),pv);
             }
             break;
     }
