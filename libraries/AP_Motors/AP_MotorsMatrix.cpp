@@ -204,7 +204,8 @@ void AP_MotorsMatrix::output_to_motors()
         if (motor_enabled[i]) {
             //TODO JA:  Manage servo reverse
             if (i == AP_MOTORS_MOT_1 || i == AP_MOTORS_MOT_2)
-                _actuator[i] = _actuator[i] * 0.5;
+                _actuator[i] = _actuator[i] * _flap_servo_ratio;
+                //_actuator[i] = _actuator[i] * 0.5;
             if (i == AP_MOTORS_MOT_2)
                 _actuator[i] = 1 - _actuator[i];
             

@@ -187,6 +187,9 @@ protected:
     // Yaw compensation Linear
     AP_Float            _yaw_linear_compensation;
 
+    // Ratio to reduce servo rotation for ROLL control F35
+    AP_Float           _flap_servo_ratio;
+
     // time to spool motors to min throttle
     AP_Float            _spool_up_time;
 

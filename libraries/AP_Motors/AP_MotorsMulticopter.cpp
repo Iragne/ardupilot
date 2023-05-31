@@ -161,6 +161,14 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_COPTER),
     AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_TRICOPTER),
     
+    // @Param: RLL_FLAP_RATIO
+    // @DisplayName: Ratio to reduce servo rotation for ROLL control F35
+    // @Description: Ratio to reduce servo rotation for ROLL control F35 (F35 only)
+    // @Range: 0 1
+    // @Units: deg
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("RLL_FLAP_RATIO", 1, AP_MotorsMulticopter, _flap_servo_ratio, 0.5, AP_PARAM_FRAME_PLANE),
 
     // @Param: SPOOL_TIME
     // @DisplayName: Spool up time
