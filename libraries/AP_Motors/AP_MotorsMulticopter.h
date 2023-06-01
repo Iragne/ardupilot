@@ -189,6 +189,9 @@ protected:
 
     // Ratio to reduce servo rotation for ROLL control F35
     AP_Float           _flap_servo_ratio;
+    // Activate or not the compensation due to the pivot angle to the back motor F35
+    AP_Float           _pitch_compensation_pivo;
+    
 
     // time to spool motors to min throttle
     AP_Float            _spool_up_time;

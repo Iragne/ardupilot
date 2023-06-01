@@ -157,9 +157,9 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     AP_GROUPINFO_FRAME("YAW_SV_ANGLE", 35, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_PLANE),
     AP_GROUPINFO_FRAME("YAW_SV_ANGLE", 35, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_COPTER),
 
-    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_PLANE),
-    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_COPTER),
-    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 1, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_TRICOPTER),
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 43, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_PLANE),
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 43, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_COPTER),
+    AP_GROUPINFO_FRAME("YAW_LINEAR_COMP", 43, AP_MotorsMulticopter, _yaw_linear_compensation, 0, AP_PARAM_FRAME_TRICOPTER),
     
     // @Param: RLL_FLAP_RATIO
     // @DisplayName: Ratio to reduce servo rotation for ROLL control F35
@@ -168,7 +168,17 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @Units: deg
     // @Increment: 0.1
     // @User: Standard
-    AP_GROUPINFO_FRAME("RLL_FLAP_RATIO", 1, AP_MotorsMulticopter, _flap_servo_ratio, 0.5, AP_PARAM_FRAME_PLANE),
+    AP_GROUPINFO_FRAME("RLL_FLAP_RATIO", 45, AP_MotorsMulticopter, _flap_servo_ratio, 0.5, AP_PARAM_FRAME_PLANE),
+
+    // @Param: PITCH_COMP_PIV
+    // @DisplayName: Activate or not the compensation due to the pivot angle to the back motor
+    // @Description: Activate or not the compensation due to the pivot angle to the back motor (F35 only)
+    // @Range: 0 1
+    // @Units: deg
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("PITCH_COMP_PIV", 44, AP_MotorsMulticopter, _pitch_compensation_pivo, 1, AP_PARAM_FRAME_PLANE),
+
 
     // @Param: SPOOL_TIME
     // @DisplayName: Spool up time

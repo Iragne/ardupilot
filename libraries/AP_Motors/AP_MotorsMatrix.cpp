@@ -461,11 +461,10 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // we should not need to check for divide by zero as fabs(_pivot_angle) is constrained to the 5deg ~ 80 deg range
     if (_active_frame_type == MOTOR_FRAME_TYPE_NYT_PLUS_YTD){
         if (AP_MOTORS_MAX_NUM_MOTORS >= 4){
-            float cc = cosf(_pivot_angle);
-            if (cc < 0.0f || cc > 0.0f){
+            
+            if (_pitch_compensation_pivo >= 1.0){
+                float cc = cosf(_pivot_angle);
                 _thrust_rpyt_out[AP_MOTORS_MOT_4] = _thrust_rpyt_out[AP_MOTORS_MOT_4] / cc;
-            }else {
-                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "cc==0, value of rpyt[3]=%f", _thrust_rpyt_out[AP_MOTORS_MOT_4]);
             }
             _thrust_rpyt_out[AP_MOTORS_MOT_4] = constrain_float(_thrust_rpyt_out[AP_MOTORS_MOT_4], 0.0f, 1.0f);
         }
