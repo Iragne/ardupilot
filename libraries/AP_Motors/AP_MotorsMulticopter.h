@@ -191,6 +191,16 @@ protected:
     AP_Float           _flap_servo_ratio;
     // Activate or not the compensation due to the pivot angle to the back motor F35
     AP_Float           _pitch_compensation_pivo;
+
+    AP_Float           min_open_flap;
+    AP_Float           max_diff_between_motors;
+
+
+    AP_Int16           _roll_management_algo;
+
+    AP_Int16           _mot_1_rev;
+    AP_Int16           _mot_2_rev;
+    
     
 
     // time to spool motors to min throttle

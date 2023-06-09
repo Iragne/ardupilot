@@ -199,14 +199,68 @@ void AP_MotorsMatrix::output_to_motors()
     // float means = (_actuator[AP_MOTORS_MOT_2] + _actuator[AP_MOTORS_MOT_1]) / 2.0;
     // _actuator[AP_MOTORS_MOT_4] = fmaxf(means, _actuator[AP_MOTORS_MOT_4]);
 
+    //const float min_open_flap = 0.2;
+    //const float max_diff_between_motors = 0.6;
+    
+    if (motor_enabled[AP_MOTORS_MOT_1] && motor_enabled[AP_MOTORS_MOT_2] && (_roll_management_algo == 2 || _roll_management_algo == 3)){
+        //float max = fmaxF(_actuator[AP_MOTORS_MOT_1], _actuator[AP_MOTORS_MOT_2]);
+        float diff = _actuator[AP_MOTORS_MOT_1] - _actuator[AP_MOTORS_MOT_2];
+        if (diff > max_diff_between_motors)
+            diff = max_diff_between_motors;
+
+        if (diff < -max_diff_between_motors)
+            diff = -max_diff_between_motors;
+        
+        if (diff <= 0.0){
+            // More on mot_2
+            _actuator[AP_MOTORS_MOT_1] = min_open_flap; // minimal flaps open
+            // open the other flap regarding the percentage of the diff between the theoretical diff of 2 motors
+            _actuator[AP_MOTORS_MOT_2] = min_open_flap + (fabs(diff) / max_diff_between_motors) * (_flap_servo_ratio - min_open_flap);
+        }
+        if (diff > 0.0){
+            // More on mot_1
+            _actuator[AP_MOTORS_MOT_2] = min_open_flap; // minimal flaps open
+            // open the other flap regarding the percentage of the diff between the theoretical diff of 2 motors
+            _actuator[AP_MOTORS_MOT_1] = min_open_flap + (fabs(diff) / max_diff_between_motors) * (_flap_servo_ratio - min_open_flap);
+        }
+    }
+    if (motor_enabled[AP_MOTORS_MOT_1] && motor_enabled[AP_MOTORS_MOT_2] && _roll_management_algo == 3){
+        // TODO
+        float m1 = _actuator[AP_MOTORS_MOT_1];
+        float m2 = _actuator[AP_MOTORS_MOT_2];
+        _actuator[AP_MOTORS_MOT_2] = 1 - m1;
+        _actuator[AP_MOTORS_MOT_1] = 1 - m2;
+    }
+
+    if (motor_enabled[AP_MOTORS_MOT_1] && motor_enabled[AP_MOTORS_MOT_2] && _roll_management_algo >= 2){
+        if (_actuator[AP_MOTORS_MOT_2] > 1)
+            _actuator[AP_MOTORS_MOT_2] = 1;
+        if (_actuator[AP_MOTORS_MOT_1] > 1)
+            _actuator[AP_MOTORS_MOT_1] = 1;
+
+        if (_actuator[AP_MOTORS_MOT_2] < 0)
+            _actuator[AP_MOTORS_MOT_2] = 0;
+        if (_actuator[AP_MOTORS_MOT_1] < 0)
+            _actuator[AP_MOTORS_MOT_1] = 0;
+    }
+
     // convert output to PWM and send to each motor
     for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i]) {
-            //TODO JA:  Manage servo reverse
-            if (i == AP_MOTORS_MOT_1 || i == AP_MOTORS_MOT_2)
-                _actuator[i] = _actuator[i] * _flap_servo_ratio;
-                //_actuator[i] = _actuator[i] * 0.5;
-            if (i == AP_MOTORS_MOT_2)
+            // manage the proportion of the servo 
+            if (_roll_management_algo == 1){
+                if (i == AP_MOTORS_MOT_1 || i == AP_MOTORS_MOT_2){
+                    _actuator[i] = _actuator[i] * _flap_servo_ratio;
+                    //_actuator[i] = _actuator[i] * 0.5;
+                }
+            }                
+
+
+                
+            //Manage servo reverse
+            if (i == AP_MOTORS_MOT_1 && _mot_1_rev == 1)
+                _actuator[i] = 1 - _actuator[i];
+            if (i == AP_MOTORS_MOT_2 && _mot_2_rev == 1)
                 _actuator[i] = 1 - _actuator[i];
             
             rc_write(i, output_to_pwm(_actuator[i]));

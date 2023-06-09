@@ -182,6 +182,52 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Standard
     AP_GROUPINFO_FRAME("PITCH_COMP_P", 45, AP_MotorsMulticopter, _pitch_compensation_pivo, 1, AP_PARAM_FRAME_PLANE),
 
+    // @Param: RLL_ALGO_MGT
+    // @DisplayName: Acivate different algo to manage the roll  with servo 0 means Quad based 1 means differential witn minmim 
+    // @Description: Activate or not the compensation due to the pivot angle to the back motor (F35 only)
+    // @Range: 1 2
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("RLL_ALGO_MGT", 46, AP_MotorsMulticopter, _roll_management_algo, 1, AP_PARAM_FRAME_PLANE),
+
+    // @Param: MOT_1_REV
+    // @DisplayName: Reverse the pwm output if servo used and how they are position
+    // @Description: Reverse the pwm output if servo used and how they are position
+    // @Range: 0 1
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("MOT_1_REV", 47, AP_MotorsMulticopter, _mot_1_rev, 0, AP_PARAM_FRAME_PLANE),
+
+    // @Param: MOT_2_REV
+    // @DisplayName: Reverse the pwm output if servo used and how they are position
+    // @Description: Reverse the pwm output if servo used and how they are position
+    // @Range: 0 1
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("MOT_2_REV", 48, AP_MotorsMulticopter, _mot_2_rev, 1, AP_PARAM_FRAME_PLANE),
+
+    // @Param: RLL_OPENFLAP
+    // @DisplayName: Acivate different algo to manage the roll  with servo 0 means Quad based 1 means differential witn minmim 
+    // @Description: Activate or not the compensation due to the pivot angle to the back motor (F35 only)
+    // @Range: 1 2
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("RLL_OPENFLAP", 49, AP_MotorsMulticopter, min_open_flap, 0.2, AP_PARAM_FRAME_PLANE),
+
+    // @Param: RLL_DIFFFLAP
+    // @DisplayName: Acivate different algo to manage the roll  with servo 0 means Quad based 1 means differential witn minmim 
+    // @Description: Activate or not the compensation due to the pivot angle to the back motor (F35 only)
+    // @Range: 1 2
+    // @Units: deg
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO_FRAME("RLL_DIFFFLAP", 50, AP_MotorsMulticopter, max_diff_between_motors, 0.6, AP_PARAM_FRAME_PLANE),
+
+
 
     // @Param: SPOOL_TIME
     // @DisplayName: Spool up time
