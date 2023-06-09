@@ -525,7 +525,8 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     }
 
     // check for failed motor
-    check_for_failed_motor(throttle_thrust_best_plus_adj);
+    if (_active_frame_type != MOTOR_FRAME_TYPE_NYT_PLUS_YTD)
+        check_for_failed_motor(throttle_thrust_best_plus_adj);
 }
 
 // check for failed motor
